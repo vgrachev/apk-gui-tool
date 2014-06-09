@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project name="apk-gui-tool" default="simple" basedir=".">
+
+  <property name="version" value="0.1"/>
+  <property name="buildnumber" value="1"/>
+
+  <tstamp>
+    <format property="this_year" pattern="yyyy"/>
+  </tstamp>
+
+  <property name="copyright" value="Copyright &#xa9; ${this_year} Vladimir Grachev"/>
+
+  <!-- Create a simple application to see if all the bits came together properly -->
+  
+  <target name="simple" description="Build an example application">
+
+    <taskdef name="jarbundler"
+             classname="net.sourceforge.jarbundler.JarBundler"/>
+
+    <jarbundler dir="${basedir}" verbose="true" showPlist="true"
+                name="${ant.project.name}"
+                mainclass="com.vgrachev.android.agt.MainForm"
+                jar="out/artifacts/apk_gui_tool_jar/${ant.project.name}.jar"
+                version="${version}"
+                copyright="${copyright}"/>
+
+  </target>
+
+  <target name="clean" description="Clean up anything we can't rebuild">
+    <delete dir="${ant.project.name}.app" quiet="true"/>
+    <delete dir="build" quiet="true"/> 
+    <delete dir="classes" quiet="true"/> 
+  </target>
+
+</project>
+
+
