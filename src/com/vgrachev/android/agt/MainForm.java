@@ -1,6 +1,9 @@
 package com.vgrachev.android.agt;
 
+import com.vgrachev.android.agt.object.Application;
 import com.vgrachev.android.agt.object.Progress;
+import com.vgrachev.android.agt.utils.TextUtils;
+import com.vgrachev.android.agt.wrapper.AaptWrapper;
 import com.vgrachev.android.agt.wrapper.AdbWrapper;
 import com.vgrachev.android.agt.wrapper.WrapperException;
 import com.vgrachev.android.agt.wrapper.WrapperListener;
@@ -37,8 +40,11 @@ public class MainForm {
     private JButton button1;
     private JButton button2;
     private JProgressBar progressBar;
+    private JButton aaptButton;
+    private JTextField aaptText;
 
     AdbWrapper adb = new AdbWrapper();
+    AaptWrapper aapt = new AaptWrapper();
 
     public MainForm() {
 
@@ -48,6 +54,13 @@ public class MainForm {
             adb.setExecutable("/Developer/SDKs/android-sdk/platform-tools/adb");
         } catch (WrapperException e) {
             adbText.setText("");
+        }
+
+        aaptText.setText("/Developer/SDKs/android-sdk/build-tools/19.1.0/aapt");
+        try {
+            aapt.setExecutable("/Developer/SDKs/android-sdk/build-tools/19.1.0/aapt");
+        } catch (WrapperException e) {
+            aaptText.setText("");
         }
 
         adbButton.addActionListener(new ActionListener() {
@@ -80,6 +93,36 @@ public class MainForm {
                     logArea.append("You chose to open this file: " +
                             openFile.getSelectedFile().getName() + newline);
                     apkText.setText(openFile.getSelectedFile().getAbsolutePath());
+
+                    try {
+                        Application apk = aapt.dumpBadging(apkText.getText());
+
+                        logArea.append(apk.toString() + TextUtils.NEWLINE);
+
+                    } catch (WrapperException e) {
+                        logArea.append(e.getLocalizedMessage() + newline);
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+
+        aaptButton.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                JFileChooser openFile = new JFileChooser();
+                int returnVal = openFile.showOpenDialog(panel);
+                if(returnVal == JFileChooser.APPROVE_OPTION) {
+                    logArea.append("You chose to open this file: " +
+                            openFile.getSelectedFile().getName() + newline);
+                    aaptText.setText(openFile.getSelectedFile().getAbsolutePath());
+                    try {
+                        aapt.setExecutable(aaptText.getText());
+                    } catch (WrapperException e) {
+                        logArea.append(e.getLocalizedMessage() + newline);
+                        e.printStackTrace();
+                    }
                 }
             }
         });
