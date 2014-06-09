@@ -37,7 +37,7 @@ public class MainForm {
     private JButton installButton;
     private JPanel panel;
     private JButton devicesButton;
-    private JButton button1;
+    private JButton uninstallButton;
     private JButton button2;
     private JProgressBar progressBar;
     private JButton aaptButton;
@@ -129,6 +129,7 @@ public class MainForm {
 
         devicesButton.addActionListener(devicesAction);
         installButton.addActionListener(installAction);
+        uninstallButton.addActionListener(uninstallAction);
     }
 
     ActionListener devicesAction = new ActionListener() {
@@ -147,12 +148,59 @@ public class MainForm {
         }
     };
 
+    ActionListener uninstallAction = new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+
+            Application apk = null;
+
+            try {
+                apk = aapt.dumpBadging(apkText.getText());
+                if (apk == null || apk.pkg == null) {
+                    logArea.append("Can't find package to uninstall");
+                    return;
+                }
+                logArea.append("Uninstalling package: " + apk.pkg.name);
+
+            } catch (WrapperException ex) {
+                logArea.append(ex.getLocalizedMessage() + newline);
+                ex.printStackTrace();
+            }
+
+            installButton.setEnabled(false);
+            uninstallButton.setEnabled(false);
+
+            adb.uninstallApk(apk.pkg.name, new WrapperListener() {
+                @Override
+                public void onProgress(Progress progress) {
+                    if (progress.getMsg() != null && !progress.getMsg().isEmpty()) {
+                        logArea.append(progress.getMsg() + newline);
+                    }
+                    progressBar.setMaximum(progress.getMaximum());
+                    progressBar.setValue(progress.getValue());
+                }
+
+                @Override
+                public void onError() {
+
+                }
+
+                @Override
+                public void onDone() {
+                    installButton.setEnabled(true);
+                    uninstallButton.setEnabled(true);
+                }
+            });
+        }
+    };
+
     ActionListener installAction = new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
 
 
             installButton.setEnabled(false);
+            uninstallButton.setEnabled(false);
 
             adb.installApk(apkText.getText(), new WrapperListener() {
                 @Override
@@ -172,12 +220,9 @@ public class MainForm {
                 @Override
                 public void onDone() {
                     installButton.setEnabled(true);
+                    uninstallButton.setEnabled(true);
                 }
             });
-
-//                logArea.append("Apk " + apkText.getText() + " has been installed on " + count + " devices" + newline);
-
-
         }
     };
 

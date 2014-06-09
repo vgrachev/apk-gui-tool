@@ -3,8 +3,6 @@ package com.vgrachev.android.agt.wrapper;
 import com.vgrachev.android.agt.object.Progress;
 
 import javax.swing.SwingWorker;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +15,7 @@ public class AdbWrapper extends BaseWrapper {
 
     public static final String CMD_DEVICES = "devices";
     public static final String CMD_INSTALL = "install -r";
+    public static final String CMD_UNINSTALL = " uninstall ";
 
     public static final String DEVICES_FIRST_LINE = "List of devices attached";
     public static final String DEVICES_DEVICE = "device";
@@ -24,8 +23,8 @@ public class AdbWrapper extends BaseWrapper {
     public static final String HELP_FIRST_LINE = "Android Debug Bridge version";
 
     public static final String INSTALL_CANT_FIND = "can't find";
-    public static final String INSTALL_SUCCESS = "Success";
-    public static final String INSTALL_FAILURE = "Failure";
+    public static final String SUCCESS = "Success";
+    public static final String FAILURE = "Failure";
 
 
 
@@ -82,7 +81,7 @@ public class AdbWrapper extends BaseWrapper {
 //                        throw new WrapperException("Install Error. " + output);
                         }
                         String[] lines = output.split(NEWLINE);
-                        if (lines[lines.length - 1].startsWith(INSTALL_FAILURE)) {
+                        if (lines[lines.length - 1].startsWith(FAILURE)) {
 //                        throw new WrapperException("Install Error. device: " + device + " Reason: " + output);
                         } else {
                             success++;
@@ -120,6 +119,58 @@ public class AdbWrapper extends BaseWrapper {
         worker.execute();
     }
 
+    public void uninstallApk(final String apk, final WrapperListener listener) {
+        SwingWorker<String, Progress> worker = new SwingWorker<String, Progress>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                List<String> devices = getDevices();
+
+                int success = 0;
+                int count = 0;
+
+                for (String device : devices) {
+                    try {
+                        String cmd = executable + " -s " + device + " " + CMD_UNINSTALL + " " + apk;
+                        publish(new Progress(count, devices.size(), "Installing: " + cmd));
+                        String output = executeCommand(cmd);
+                        publish(new Progress(count, devices.size(), output));
+                        String[] lines = output.split(NEWLINE);
+                        if (!lines[lines.length - 1].startsWith(FAILURE)) {
+                            success++;
+                        }
+                    } catch (WrapperException e) {
+                        publish(new Progress(count, devices.size(), e.getLocalizedMessage()));
+                        e.printStackTrace();
+                    }
+                    count++;
+                    publish(new Progress(count, devices.size(), null));
+                }
+
+                publish(new Progress(count, devices.size(), "Apk has been uninstalled on " + success + " devices"));
+
+                return null;
+            }
+
+            @Override
+            protected void process(List<Progress> chunks) {
+                if (listener != null) {
+                    for (Progress chunk : chunks) {
+                        listener.onProgress(chunk);
+                    }
+                }
+            }
+
+            @Override
+            protected void done() {
+                if (listener != null) {
+                    listener.onDone();
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
     public int installApk(String apk) throws WrapperException {
         List<String> devices = getDevices();
 
@@ -133,7 +184,7 @@ public class AdbWrapper extends BaseWrapper {
                 throw new WrapperException("Install Error. " + output);
             }
             String[] lines = output.split(NEWLINE);
-            if (lines[lines.length - 1].startsWith(INSTALL_FAILURE)) {
+            if (lines[lines.length - 1].startsWith(FAILURE)) {
                 throw new WrapperException("Install Error. device: " + device + " Reason: " + output);
             }
             else {
