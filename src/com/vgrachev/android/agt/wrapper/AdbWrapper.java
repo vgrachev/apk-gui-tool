@@ -13,7 +13,7 @@ public class AdbWrapper {
     private String executable;
 
     public static final String CMD_DEVICES = "devices";
-    public static final String CMD_INSTALL = "install";
+    public static final String CMD_INSTALL = "install -r";
 
     public static final String DEVICES_FIRST_LINE = "List of devices attached";
     public static final String DEVICES_DEVICE = "device";
