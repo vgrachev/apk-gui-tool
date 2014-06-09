@@ -1,5 +1,6 @@
 package com.vgrachev.android.agt;
 
+import com.vgrachev.android.agt.object.Progress;
 import com.vgrachev.android.agt.wrapper.AdbWrapper;
 import com.vgrachev.android.agt.wrapper.WrapperException;
 import com.vgrachev.android.agt.wrapper.WrapperListener;
@@ -8,6 +9,7 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import java.awt.Dimension;
@@ -34,6 +36,7 @@ public class MainForm {
     private JButton devicesButton;
     private JButton button1;
     private JButton button2;
+    private JProgressBar progressBar;
 
     AdbWrapper adb = new AdbWrapper();
 
@@ -110,8 +113,12 @@ public class MainForm {
 
             adb.installApk(apkText.getText(), new WrapperListener() {
                 @Override
-                public void onProgress(String chunk) {
-                    logArea.append(chunk + newline);
+                public void onProgress(Progress progress) {
+                    if (progress.getMsg() != null && !progress.getMsg().isEmpty()) {
+                        logArea.append(progress.getMsg() + newline);
+                    }
+                    progressBar.setMaximum(progress.getMaximum());
+                    progressBar.setValue(progress.getValue());
                 }
 
                 @Override

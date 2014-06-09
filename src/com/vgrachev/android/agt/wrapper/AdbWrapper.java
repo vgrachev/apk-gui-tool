@@ -1,5 +1,7 @@
 package com.vgrachev.android.agt.wrapper;
 
+import com.vgrachev.android.agt.object.Progress;
+
 import javax.swing.SwingWorker;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -62,19 +64,20 @@ public class AdbWrapper {
     }
 
     public void installApk(final String apk, final WrapperListener listener) {
-        SwingWorker<String, String> worker = new SwingWorker<String, String>() {
+        SwingWorker<String, Progress> worker = new SwingWorker<String, Progress>() {
             @Override
             protected String doInBackground() throws Exception {
                 List<String> devices = getDevices();
 
+                int success = 0;
                 int count = 0;
 
                 for (String device : devices) {
                     try {
                         String cmd = executable + " -s " + device + " " + CMD_INSTALL + " " + apk;
-                        publish("Installing: " + cmd);
+                        publish(new Progress(count, devices.size(), "Installing: " + cmd));
                         String output = executeCommand(cmd);
-                        publish(output);
+                        publish(new Progress(count, devices.size(), output));
                         if (output.startsWith(INSTALL_CANT_FIND)) {
 //                        throw new WrapperException("Install Error. " + output);
                         }
@@ -82,23 +85,25 @@ public class AdbWrapper {
                         if (lines[lines.length - 1].startsWith(INSTALL_FAILURE)) {
 //                        throw new WrapperException("Install Error. device: " + device + " Reason: " + output);
                         } else {
-                            count++;
+                            success++;
                         }
                     } catch (WrapperException e) {
-                        publish(e.getLocalizedMessage() + NEWLINE);
+                        publish(new Progress(count, devices.size(), e.getLocalizedMessage()));
                         e.printStackTrace();
                     }
+                    count++;
+                    publish(new Progress(count, devices.size(), null));
                 }
 
-                publish("Apk has been installed on " + count + " devices");
+                publish(new Progress(count, devices.size(), "Apk has been installed on " + success + " devices"));
 
                 return null;
             }
 
             @Override
-            protected void process(List<String> chunks) {
+            protected void process(List<Progress> chunks) {
                 if (listener != null) {
-                    for (String chunk : chunks) {
+                    for (Progress chunk : chunks) {
                         listener.onProgress(chunk);
                     }
                 }
