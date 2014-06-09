@@ -1,5 +1,6 @@
 package com.vgrachev.android.agt.wrapper;
 
+import javax.swing.SwingWorker;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -58,6 +59,60 @@ public class AdbWrapper {
         }
 
         return result;
+    }
+
+    public void installApk(final String apk, final WrapperListener listener) {
+        SwingWorker<String, String> worker = new SwingWorker<String, String>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                List<String> devices = getDevices();
+
+                int count = 0;
+
+                for (String device : devices) {
+                    try {
+                        String cmd = executable + " -s " + device + " " + CMD_INSTALL + " " + apk;
+                        publish("Installing: " + cmd);
+                        String output = executeCommand(cmd);
+                        publish(output);
+                        if (output.startsWith(INSTALL_CANT_FIND)) {
+//                        throw new WrapperException("Install Error. " + output);
+                        }
+                        String[] lines = output.split(NEWLINE);
+                        if (lines[lines.length - 1].startsWith(INSTALL_FAILURE)) {
+//                        throw new WrapperException("Install Error. device: " + device + " Reason: " + output);
+                        } else {
+                            count++;
+                        }
+                    } catch (WrapperException e) {
+                        publish(e.getLocalizedMessage() + NEWLINE);
+                        e.printStackTrace();
+                    }
+                }
+
+                publish("Apk has been installed on " + count + " devices");
+
+                return null;
+            }
+
+            @Override
+            protected void process(List<String> chunks) {
+                if (listener != null) {
+                    for (String chunk : chunks) {
+                        listener.onProgress(chunk);
+                    }
+                }
+            }
+
+            @Override
+            protected void done() {
+                if (listener != null) {
+                    listener.onDone();
+                }
+            }
+        };
+
+        worker.execute();
     }
 
     public int installApk(String apk) throws WrapperException {

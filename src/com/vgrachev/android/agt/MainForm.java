@@ -2,6 +2,7 @@ package com.vgrachev.android.agt;
 
 import com.vgrachev.android.agt.wrapper.AdbWrapper;
 import com.vgrachev.android.agt.wrapper.WrapperException;
+import com.vgrachev.android.agt.wrapper.WrapperListener;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -104,14 +105,29 @@ public class MainForm {
         @Override
         public void actionPerformed(ActionEvent e) {
 
-            try {
-                int count = adb.installApk(apkText.getText());
 
-                logArea.append("Apk " + apkText.getText() + " has been installed on " + count + " devices" + newline);
+            installButton.setEnabled(false);
 
-            } catch (WrapperException e1) {
-                logArea.append(e1.getLocalizedMessage() + newline);
-            }
+            adb.installApk(apkText.getText(), new WrapperListener() {
+                @Override
+                public void onProgress(String chunk) {
+                    logArea.append(chunk + newline);
+                }
+
+                @Override
+                public void onError() {
+
+                }
+
+                @Override
+                public void onDone() {
+                    installButton.setEnabled(true);
+                }
+            });
+
+//                logArea.append("Apk " + apkText.getText() + " has been installed on " + count + " devices" + newline);
+
+
         }
     };
 
