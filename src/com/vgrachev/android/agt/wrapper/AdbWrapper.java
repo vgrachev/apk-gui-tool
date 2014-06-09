@@ -11,9 +11,9 @@ import java.util.List;
 /**
  * Created by vgrachev on 08/06/14.
  */
-public class AdbWrapper {
+public class AdbWrapper extends BaseWrapper {
 
-    private String executable;
+    public static final String PROGRAM_NAME = "adb";
 
     public static final String CMD_DEVICES = "devices";
     public static final String CMD_INSTALL = "install -r";
@@ -35,13 +35,13 @@ public class AdbWrapper {
     public AdbWrapper() {
     }
 
-    public void setExecutable(String executable) throws WrapperException {
-        this.executable = executable;
-        check();
-    }
-
     public void check() throws WrapperException {
         executeCommand(executable + " " + CMD_DEVICES);
+    }
+
+    @Override
+    public String getProgramName() {
+        return PROGRAM_NAME;
     }
 
     public List<String> getDevices() throws WrapperException {
@@ -142,47 +142,5 @@ public class AdbWrapper {
         }
 
         return count;
-    }
-
-    private String executeCommand(String command) throws WrapperException {
-
-        if (executable == null || executable.isEmpty()) {
-            throw new WrapperException("adb executable has not been defined");
-        }
-
-        StringBuffer output = new StringBuffer();
-
-        Process p;
-        try {
-            p = Runtime.getRuntime().exec(command);
-            p.waitFor();
-            int result = p.exitValue();
-
-            if (result != 0) {
-                throw new WrapperException("adb exit code " + result + ". error while executing command " + command);
-            }
-
-            BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-            String line = "";
-            while ((line = reader.readLine())!= null) {
-                output.append(line + "\n");
-            }
-
-        } catch (Exception e) {
-            throw new WrapperException(e.getLocalizedMessage());
-        }
-
-        if (output == null) {
-            throw new WrapperException("adb: empty output. command: " + command);
-        }
-
-        if (output.toString().startsWith(HELP_FIRST_LINE)) {
-            throw new WrapperException("adb error. Bad command: " + command);
-        }
-
-        return output.toString();
-
     }
 }
